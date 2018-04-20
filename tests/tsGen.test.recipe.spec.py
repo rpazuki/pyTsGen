@@ -312,6 +312,58 @@ class TestRecipeSpecs(unittest.TestCase):
         self.assertEqual(t1.start,pd.to_datetime(recipe_start_length_delta_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
         self.assertEqual(t1.end,pd.to_datetime('2018-01-02 01:00'),'The end must be equal 2018-01-02 01:00:00.')
         
+        
+    def test_recipe_end_length_delta_exlusives(self):
+        recipe_end_length_delta_exlusives = { 
+            'end': '2018-01-02',
+            'length': 25,
+            'delta': '1 h'
+        }        
+        t1 = TemporalTemplate(recipe_end_length_delta_exlusives)
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.length,25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.start,pd.to_datetime('2018-01-01'),'The start must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        
+        t1 = TemporalTemplate(self.merge(recipe_end_length_delta_exlusives,{'start-exclusive':False}))        
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if start-exclusive is False.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if start-exclusive is False.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if start-exclusive is False.')
+        self.assertEqual(t1.start,pd.to_datetime('2018-01-01'),'The start must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        t1 = TemporalTemplate(self.merge(recipe_end_length_delta_exlusives,{'start-exclusive':True}))        
+        self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if start-exclusive is True.')
+        self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start if start-exclusive is True.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if start-exclusive is True.')
+        self.assertEqual(t1.start,pd.to_datetime('2018-01-01'),'The start must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        t1 = TemporalTemplate(self.merge(recipe_end_length_delta_exlusives,{'end-exclusive':False}))        
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is False.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if end-exclusive is False.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if end-exclusive is False.')
+        self.assertEqual(t1.start,pd.to_datetime('2018-01-01'),'The start must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        t1 = TemporalTemplate(self.merge(recipe_end_length_delta_exlusives,{'end-exclusive':True}))        
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is True.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start even if end-exclusive is True.')
+        self.assertNotEqual(t1.ticks[-1],t1.end,'The last tick not must be equal to end if end-exclusive is True.')
+        self.assertEqual(t1.start,pd.to_datetime('2017-12-31 23:00:00'),'The start must be equal 2017-12-31 23:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        
+        t1 = TemporalTemplate(self.merge(recipe_end_length_delta_exlusives,{'end-exclusive':True,'start-exclusive':True}))        
+        self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if both start-exclusive and end-exclusive are True.')
+        self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start even if both start-exclusive and end-exclusive are True.')
+        self.assertNotEqual(t1.ticks[-1],t1.end,'The last tick must not be equal to end if both start-exclusive and end-exclusive are True.')
+        self.assertEqual(t1.start,pd.to_datetime('2017-12-31 23:00:00'),'The start must be equal 2017-12-31 23:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime(recipe_end_length_delta_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
+        
        
 
     def merge(self,x,y):

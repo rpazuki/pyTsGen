@@ -65,6 +65,24 @@ class TemporalTemplate:
             self.end = pd.to_datetime(recipe['end'])
             self.length = int(recipe['length'])
             self.delta = self.__parse_delta__(recipe)
+            
+            if('end-exclusive' in recipe and recipe['end-exclusive'] == True):
+                ticks = []
+                l = self.length
+            else:
+                ticks = [self.end]
+                l = self.length -1
+            
+            current_date = self.end - self.delta
+            for idx in range(l):
+                ticks.insert(0,current_date)
+                current_date = current_date - self.delta
+                
+            self.start = ticks[0]
+            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
+                ticks.remove(self.start)
+                
+            self.ticks = np.array(ticks)
         #Format four: start, end, length
         elif('start' in recipe and 'end' in recipe and not 'delta' in recipe and 'length' in recipe):
             self.start = pd.to_datetime(recipe['start'])
