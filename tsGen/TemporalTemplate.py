@@ -5,6 +5,7 @@ Created on Fri Apr 20 11:16:32 2018
 @author: roozbeh
 """
 #%%
+import warnings
 import numpy as np
 from numpy import timedelta64
 import pandas as pd
@@ -57,8 +58,9 @@ class TemporalTemplate:
                 current_date = current_date + self.delta
             
             self.end = ticks[-1]
-            if('end-exclusive' in recipe and recipe['end-exclusive'] == True):
-                ticks.remove(self.end)
+            if('end-exclusive' in recipe):
+                warnings.warn('end-exclusive does not have any effect when end is not defined in recipe.',SyntaxWarning)
+                
             self.ticks = np.array(ticks)
         #Format three: end, length, delta
         elif(not 'start' in recipe and 'end' in recipe and 'delta' in recipe and 'length' in recipe):
@@ -79,8 +81,8 @@ class TemporalTemplate:
                 current_date = current_date - self.delta
                 
             self.start = ticks[0]
-            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
-                ticks.remove(self.start)
+            if('start-exclusive' in recipe):
+                warnings.warn('start-exclusive does not have any effect when start is not defined in recipe.',SyntaxWarning)
                 
             self.ticks = np.array(ticks)
         #Format four: start, end, length
@@ -88,7 +90,34 @@ class TemporalTemplate:
             self.start = pd.to_datetime(recipe['start'])
             self.end = pd.to_datetime(recipe['end'])
             self.length = int(recipe['length'])
-
+            
+            
+            if((not 'start-exclusive' in recipe or recipe['start-exclusive'] == False) and \
+               (not 'end-exclusive' in recipe or recipe['end-exclusive'] == False)):
+                l = self.length -1 
+            elif((not 'start-exclusive' in recipe or recipe['start-exclusive'] == False) or \
+                 (not 'end-exclusive' in recipe or recipe['end-exclusive'] == False)):
+                l = self.length            
+            else:
+                l = self.length +1
+            
+            self.delta = (self.end - self.start)/l
+            
+            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
+                ticks = []
+            else:
+                ticks = [self.start]
+                
+            current_date = self.start+ self.delta
+            while  self.end - current_date > timedelta64(1,'ms'):                
+                ticks.append(current_date)
+                current_date = current_date + self.delta
+                
+            if(not 'end-exclusive' in recipe or recipe['end-exclusive'] == False):
+                ticks.append(self.end)
+                    
+            self.ticks = np.array(ticks)
+            
         else:
             raise ValueError("""The provided recipe does not follow any of the possible formats:
                                 Format one: start, end, delta
