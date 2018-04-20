@@ -5,6 +5,8 @@ Created on Fri Apr 20 11:16:32 2018
 @author: roozbeh
 """
 #%%
+import numpy as np
+from numpy import timedelta64
 import pandas as pd
 
 class TemporalTemplate:
@@ -15,7 +17,26 @@ class TemporalTemplate:
         if('start' in recipe and 'end' in recipe and 'delta' in recipe and not 'length' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.end = pd.to_datetime(recipe['end'])
-            self.delta = recipe['delta']
+            (i,st) = recipe['delta'].split(' ')
+            self.delta = timedelta64(i,st)
+            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
+                ticks = []
+            else:
+                ticks = [self.start]
+                
+            current_date = self.start+ self.delta
+            while current_date < self.end:                
+                ticks.append(current_date)
+                current_date = current_date + self.delta
+                
+            if('end-exclusive' in recipe and recipe['end-exclusive'] == True):
+                if(ticks[-1] == self.end):
+                    ticks.remove(self.end)
+            else:
+                if(ticks[-1] != self.end):
+                    ticks.append(self.end)
+                    
+            self.ticks = np.array(ticks)
 
         #Format two: start, length, delta
         elif('start' in recipe and not 'end' in recipe and 'delta' in recipe and 'length' in recipe):

@@ -16,9 +16,10 @@ class Test1(unittest.TestCase):
         recipe = { 
             'start': '2018-01-01',
             'end': '2018-01-02',
-            'length': 100
-         }
-        ts = TemporalTemplate(recipe)
+            'delta': '1 h'
+         }        
+        ts = TemporalTemplate(recipe)        
+        self.assertEqual(len(ts.ticks),25, 'There must be 25 ticks for 24 hours period with delta 1 h.')
             
 if __name__ == '__main__':
     unittest.main()            
