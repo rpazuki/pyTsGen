@@ -15,7 +15,8 @@ class TemporalTemplate:
     def __init__(self, recipe):
         self.recipe = recipe
         #Format one: start, end, delta
-        if('start' in recipe and 'end' in recipe and 'delta' in recipe and not 'length' in recipe):
+        if('start' in recipe and 'end' in recipe and 'delta' in recipe and not 'length' in recipe \
+           and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.end = pd.to_datetime(recipe['end'])
             self.delta = self.__parse_delta__(recipe)
@@ -40,7 +41,8 @@ class TemporalTemplate:
             self.length = len(ticks)
 
         #Format two: start, length, delta
-        elif('start' in recipe and not 'end' in recipe and 'delta' in recipe and 'length' in recipe):
+        elif('start' in recipe and not 'end' in recipe and 'delta' in recipe and 'length' in recipe\
+           and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.length = int(recipe['length'])
             self.delta = self.__parse_delta__(recipe)
@@ -63,7 +65,8 @@ class TemporalTemplate:
                 
             self.ticks = np.array(ticks)
         #Format three: end, length, delta
-        elif(not 'start' in recipe and 'end' in recipe and 'delta' in recipe and 'length' in recipe):
+        elif(not 'start' in recipe and 'end' in recipe and 'delta' in recipe and 'length' in recipe\
+           and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.end = pd.to_datetime(recipe['end'])
             self.length = int(recipe['length'])
             self.delta = self.__parse_delta__(recipe)
@@ -86,7 +89,8 @@ class TemporalTemplate:
                 
             self.ticks = np.array(ticks)
         #Format four: start, end, length
-        elif('start' in recipe and 'end' in recipe and not 'delta' in recipe and 'length' in recipe):
+        elif('start' in recipe and 'end' in recipe and not 'delta' in recipe and 'length' in recipe\
+           and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.end = pd.to_datetime(recipe['end'])
             self.length = int(recipe['length'])
@@ -118,17 +122,77 @@ class TemporalTemplate:
                     
             self.ticks = np.array(ticks)
             
+        #Format five: start, points, res
+        elif('start' in recipe and not 'end' in recipe and not 'delta' in recipe and not 'length' in recipe\
+           and 'points' in recipe and 'res' in recipe and not 'points_delta' in recipe):
+            
+            self.start = pd.to_datetime(recipe['start'])
+            
+            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
+                ticks = []            
+            else:
+                ticks = [self.start]
+
+            resolution = recipe['res']
+            current_date = self.start
+            previous_p = 0
+            for p in recipe['points']:                         
+                delta_p = p - previous_p
+                if(delta_p <= 0):
+                    raise ValueError('points sequence must be an strictly increasing function ')
+                    
+                previous_p = p
+                current_date += np.timedelta64(delta_p,resolution)
+                ticks.append(current_date)
+                
+            self.end = ticks[-1]
+            if('end-exclusive' in recipe):
+                warnings.warn('end-exclusive does not have any effect when end is not defined in recipe.',SyntaxWarning)
+                
+            self.length = len(ticks)
+            self.ticks = np.array(ticks)    
+            
+        #Format six: end, points_delta, res
+        elif('start' in recipe and not 'end' in recipe and not 'delta' in recipe and not 'length' in recipe\
+           and not 'points' in recipe and 'res' in recipe and 'points_delta' in recipe):
+            self.start = pd.to_datetime(recipe['start'])
+            
+            if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
+                ticks = []            
+            else:
+                ticks = [self.start]
+
+            resolution = recipe['res']
+            current_date = self.start
+            for p in recipe['points_delta']:      
+                if(p <= 0):
+                    raise ValueError('points_delta sequence must be positve/non-zero.')                   
+                current_date += np.timedelta64(p,resolution)
+                ticks.append(current_date)
+                
+            self.end = ticks[-1]
+            if('end-exclusive' in recipe):
+                warnings.warn('end-exclusive does not have any effect when end is not defined in recipe.',SyntaxWarning)
+                
+            self.length = len(ticks)
+            self.ticks = np.array(ticks)    
+            
         else:
             raise ValueError("""The provided recipe does not follow any of the possible formats:
                                 Format one: start, end, delta
                                 Format two: start, length, delta
                                 Format three: end, length, delta
                                 Format four: start, end, length
+                                Format five: start, points, res
+                                Format six: end, points_delta, res
                                 Note: 
                                     start: formatted date-time as string
                                     end: formatted date-time as string 
                                     length: int
                                     delta: string. e.g '1 s', '2 m', '3 h' , '4 D'
+                                    points:  an iteratable of int. It must be an strictly increasing function 
+                                    points_delta: an iteratable of int. All its elements must be positive.
+                                    res: an string for the resolution of points in time. similar to delta time part.                                    
                              """)
         
        
@@ -143,7 +207,7 @@ class TemporalTemplate:
         except ValueError:
             raise ValueError('delta is in wrong format. The first part must be an integer. examples: "1 s", "2 m", "3 h", "4 D"')
         try:
-            ret = timedelta64(i,st)
+            ret = np.timedelta64(i,st)
         except TypeError:    
             raise ValueError('delta is in wrong format. The first part must be an integer. examples: "1 s", "2 m", "3 h", "4 D"')
         return ret

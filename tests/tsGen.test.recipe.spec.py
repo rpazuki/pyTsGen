@@ -464,8 +464,161 @@ class TestRecipeSpecs(unittest.TestCase):
         self.assertNotEqual(t1.ticks[-1],t1.end,'The last tick must not be equal to end if both start-exclusive and end-exclusive are True.') 
         self.assertEqual(t1.start,pd.to_datetime(recipe_start_end_length_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
         self.assertEqual(t1.end,pd.to_datetime(recipe_start_end_length_exlusives['end']),'The end must be equal 2018-01-02 00:00:00.') 
-        
+    
+    def test_non_strictly_increasing_points(self):
+        non_strictly_increasing_points = { 
+            'start': '2018-01-01',
+            'res': 'h',
+            
+        }        
+        with self.assertRaises(ValueError):
+            TemporalTemplate(self.merge(non_strictly_increasing_points,{'points': [1,2,3,2,6] }))   
+            
+        with self.assertRaises(ValueError):
+            TemporalTemplate(self.merge(non_strictly_increasing_points,{'points': [1,2,3,-3,6] }))
+            
+        with self.assertRaises(ValueError):
+            TemporalTemplate(self.merge(non_strictly_increasing_points,{'points': [1,2,3,3,6] }))
 
+    def test_recipe_start_point_res_exlusives(self):
+        recipe_start_point_res_exlusives = { 
+            'start': '2018-01-01',
+            'points': [int(i) for i in range(1,25)],
+            'res': 'h'
+        }                
+        t1 = TemporalTemplate(recipe_start_point_res_exlusives)            
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.length,25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.')        
+        
+        t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'start-exclusive':False}))        
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if start-exclusive is False.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if start-exclusive is False.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if start-exclusive is False.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'start-exclusive':True}))        
+        self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if start-exclusive is True.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start if start-exclusive is True.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if start-exclusive is True.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':False}))        
+            self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is False.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if end-exclusive is False.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if end-exclusive is False.')
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':True}))         
+            self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is True.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start even if end-exclusive is True.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if end-exclusive is True when the end is not set.') 
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':True,'start-exclusive':True}))         
+            self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if both start-exclusive and end-exclusive are True.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start even if both start-exclusive and end-exclusive are True.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if end-exclusive is True when the end is not set.') 
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+    
+    def test_non_positive_or_zero_points_delta(self):
+        non_positive_or_zero_points_delta = { 
+            'start': '2018-01-01',
+            'res': 'h',            
+        }        
+        with self.assertRaises(ValueError):
+            TemporalTemplate(self.merge(non_positive_or_zero_points_delta,{'points_delta': [1,1,1,0,1,1] }))   
+            
+        with self.assertRaises(ValueError):
+            TemporalTemplate(self.merge(non_positive_or_zero_points_delta,{'points_delta': [1,1,1,-1,1,1] }))
+              
+    def test_recipe_start_point_delta_res_exlusives(self):
+        recipe_start_point_res_exlusives = { 
+            'start': '2018-01-01',
+            'points_delta': [1 for i in range(1,25)],
+            'res': 'h'
+        }                
+        t1 = TemporalTemplate(recipe_start_point_res_exlusives)            
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.length,25,'There must be 25 ticks if no exlusion provided.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to start if no exlusion provided.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.')        
+        
+        t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'start-exclusive':False}))        
+        self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if start-exclusive is False.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if start-exclusive is False.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if start-exclusive is False.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'start-exclusive':True}))        
+        self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if start-exclusive is True.')
+        self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+        self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start if start-exclusive is True.')
+        self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if start-exclusive is True.')
+        self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+        self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':False}))        
+            self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is False.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start if end-exclusive is False.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end if end-exclusive is False.')
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':True}))         
+            self.assertEqual(len(t1.ticks),25,'There must be 25 ticks if end-exclusive is True.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertEqual(t1.ticks[0],t1.start,'The first tick must be equal to start even if end-exclusive is True.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if end-exclusive is True when the end is not set.') 
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            t1 = TemporalTemplate(self.merge(recipe_start_point_res_exlusives,{'end-exclusive':True,'start-exclusive':True}))         
+            self.assertEqual(len(t1.ticks),24,'There must be 24 ticks if both start-exclusive and end-exclusive are True.')
+            self.assertEqual(t1.length,len(t1.ticks),'The length property must be equal to the length of ticks.')
+            self.assertNotEqual(t1.ticks[0],t1.start,'The first tick must not be equal to start even if both start-exclusive and end-exclusive are True.')
+            self.assertEqual(t1.ticks[-1],t1.end,'The last tick must be equal to end even if end-exclusive is True when the end is not set.') 
+            self.assertEqual(t1.start,pd.to_datetime(recipe_start_point_res_exlusives['start']),'The end must be equal 2018-01-01 00:00:00.')
+            self.assertEqual(t1.end,pd.to_datetime('2018-01-02'),'The end must be equal 2018-01-02 00:00:00.') 
+            self.assertEqual(w[-1].category,SyntaxWarning )
+            
     def merge(self,x,y):
         z = x.copy()
         z.update(y)
