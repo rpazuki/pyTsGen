@@ -19,11 +19,14 @@ class TemporalJitter:
         raise StopIteration
         
     def __next__(self):
-        rv = self.pdf.rvs(1).item()
-        return np.timedelta64(int(rv),self.res) 
+        return np.timedelta64(self.nextInt(),self.res) 
     
     def next(self):
         return self.__next__()
+    
+    def nextInt(self):
+        rv = self.pdf.rvs(1).item()
+        return int(rv)
     
     def close(self):
         """Raise GeneratorExit inside generator.

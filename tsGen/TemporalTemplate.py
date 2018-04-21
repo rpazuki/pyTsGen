@@ -232,6 +232,9 @@ class TemporalTemplate:
         else:
             raise ValueError('The provided type cannot be added to TemporalTemplate.')
         
+    def __radd__(self, other):
+        return self.__add__(other)
+    
     def __sub__(self, other):
         """
           if the second argument is a string of delta (e.g. '1 s'), then it subtract the delta from all the ticks.
@@ -249,6 +252,50 @@ class TemporalTemplate:
             return TemporalTemplate(recipe=None, ticks=ticks) 
         else:
             raise ValueError('The provided type cannot be subtracted from TemporalTemplate.')
+            
+    
+    def __mul__(self, other):
+        """
+          if the second argument is a int (n), then creates n equal-distance new ticks between each consecutive one.
+          if the second argument is a TemporalJitter object, then creates n random equal-distance new ticks between each consecutive one from the ticks where the random value is sampled from the TemporalJitter.
+          the negative values does not have any effect.
+        """
+        if(isinstance(other,TemporalTemplate)):
+            raise ValueError('Subtracting two TemporalTemplates is not defined.')
+        elif(isinstance(other,int)):
+            if(other <= 1):
+                return TemporalTemplate(recipe=None, ticks=np.copy(self.ticks)) 
+            else:
+                ticks = []
+                splits = other
+                for idx,t in enumerate(self.ticks[:-1]):
+                    ticks.append(t)                    
+                    next_t = self.ticks[idx+1]
+                    delta = (next_t - t)/splits 
+                    for j in range(1,splits):                        
+                        ticks.append(t + delta*j)
+                ticks.append(self.ticks[-1])         
+                return TemporalTemplate(recipe=None, ticks=np.array(ticks)) 
+        elif(isinstance(other,TemporalJitter)):
+            jitter = other
+            ticks = []
+            for idx,t in enumerate(self.ticks[:-1]):
+                ticks.append(t)                    
+                next_t = self.ticks[idx+1]
+                splits = jitter.nextInt()
+                if(splits <= 0):
+                    continue                
+                delta = (next_t - t)/splits 
+                for j in range(1,splits):                        
+                    ticks.append(t + delta*j)
+            ticks.append(self.ticks[-1])         
+            
+            return TemporalTemplate(recipe=None, ticks=np.array(ticks)) 
+        else:
+            raise ValueError('The provided type cannot be subtracted from TemporalTemplate.')
+            
+    def __rmul__(self,other):
+        return self.__mul__(other)
     
     def __parse_delta__(self,d):
         try:
