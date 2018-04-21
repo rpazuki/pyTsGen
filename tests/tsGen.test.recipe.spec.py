@@ -97,7 +97,6 @@ class TestRecipeSpecs(unittest.TestCase):
             
         t1 = TemporalTemplate(self.merge(recipe_without_delta,{'delta': '1 h'})) 
         self.assertEqual(len(t1.ticks),25,'There must be 25 ticks.')
-        self.assertEqual(t1.delta,np.timedelta64(1,'h'),'There must be 25 ticks.')
         
             
     def test_recipe_with_all_fours(self):

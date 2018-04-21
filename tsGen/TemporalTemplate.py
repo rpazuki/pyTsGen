@@ -6,29 +6,42 @@ Created on Fri Apr 20 11:16:32 2018
 """
 #%%
 import warnings
+import copy
 import numpy as np
 from numpy import timedelta64
 import pandas as pd
 
 class TemporalTemplate:
     
-    def __init__(self, recipe):
+    def __init__(self, recipe, **bykvArgs):
+        if(bykvArgs is None and recipe is None):
+            raise ValueError()
+        elif(recipe is not None):
+            self.__default_const__(recipe)
+        else:
+            self.start = bykvArgs.get('start')
+            self.end = bykvArgs.get('end')
+            self.ticks = bykvArgs.get('ticks')
+            self.length = len(self.ticks)
+        
+        
+    def __default_const__(self,recipe):
         self.recipe = recipe
         #Format one: start, end, delta
         if('start' in recipe and 'end' in recipe and 'delta' in recipe and not 'length' in recipe \
            and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.end = pd.to_datetime(recipe['end'])
-            self.delta = self.__parse_delta__(recipe)
+            delta = self.__parse_delta__(recipe)
             if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
                 ticks = []
             else:
                 ticks = [self.start]
                 
-            current_date = self.start+ self.delta
+            current_date = self.start+ delta
             while current_date < self.end:                
                 ticks.append(current_date)
-                current_date = current_date + self.delta
+                current_date = current_date + delta
                 
             if('end-exclusive' in recipe and recipe['end-exclusive'] == True):
                 if(ticks[-1] == self.end):
@@ -45,7 +58,7 @@ class TemporalTemplate:
            and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.start = pd.to_datetime(recipe['start'])
             self.length = int(recipe['length'])
-            self.delta = self.__parse_delta__(recipe)
+            delta = self.__parse_delta__(recipe)
             
             if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
                 ticks = []
@@ -54,10 +67,10 @@ class TemporalTemplate:
                 ticks = [self.start]
                 l = self.length -1
                 
-            current_date = self.start+ self.delta
+            current_date = self.start+ delta
             for idx in range(l):                
                 ticks.append(current_date)
-                current_date = current_date + self.delta
+                current_date = current_date + delta
             
             self.end = ticks[-1]
             if('end-exclusive' in recipe):
@@ -69,7 +82,7 @@ class TemporalTemplate:
            and not 'points' in recipe and not 'res' in recipe and not 'points_delta' in recipe):
             self.end = pd.to_datetime(recipe['end'])
             self.length = int(recipe['length'])
-            self.delta = self.__parse_delta__(recipe)
+            delta = self.__parse_delta__(recipe)
             
             if('end-exclusive' in recipe and recipe['end-exclusive'] == True):
                 ticks = []
@@ -78,10 +91,10 @@ class TemporalTemplate:
                 ticks = [self.end]
                 l = self.length -1
             
-            current_date = self.end - self.delta
+            current_date = self.end - delta
             for idx in range(l):
                 ticks.insert(0,current_date)
-                current_date = current_date - self.delta
+                current_date = current_date - delta
                 
             self.start = ticks[0]
             if('start-exclusive' in recipe):
@@ -105,17 +118,17 @@ class TemporalTemplate:
             else:
                 l = self.length +1
             
-            self.delta = (self.end - self.start)/l
+            delta = (self.end - self.start)/l
             
             if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
                 ticks = []
             else:
                 ticks = [self.start]
                 
-            current_date = self.start+ self.delta
+            current_date = self.start+ delta
             while  self.end - current_date > timedelta64(1,'ms'):                
                 ticks.append(current_date)
-                current_date = current_date + self.delta
+                current_date = current_date + delta
                 
             if(not 'end-exclusive' in recipe or recipe['end-exclusive'] == False):
                 ticks.append(self.end)
@@ -194,11 +207,33 @@ class TemporalTemplate:
                                     points_delta: an iteratable of int. All its elements must be positive.
                                     res: an string for the resolution of points in time. similar to delta time part.                                    
                              """)
+    def __add__(self, other):
+        if(isinstance(other,TemporalTemplate)):
+            return merge(self,other)
+        elif(isinstance(other,str)):
+            delta = self.__parse_delta__(dict(delta=other))
+            ret = copy.deepcopy(self)
+            for idx,x in enumerate(ret.ticks):
+                ret.ticks[idx] += delta
+            ret.start = ret.ticks[0]
+            ret.end = ret.ticks[-1]
+            return ret
         
-       
-    def __parse_delta__(self,recipe):
+    def __sub__(self, other):
+        if(isinstance(other,TemporalTemplate)):
+            raise ValueError('Subtracting two TemporalTemplates is not defined.')
+        elif(isinstance(other,str)):
+            delta = self.__parse_delta__(dict(delta=other))
+            ret = copy.deepcopy(self)
+            for idx,x in enumerate(ret.ticks):
+                ret.ticks[idx] -= delta
+            ret.start = ret.ticks[0]
+            ret.end = ret.ticks[-1]
+            return ret
+    
+    def __parse_delta__(self,d):
         try:
-            (i,st) = recipe['delta'].split(' ')                
+            (i,st) = d['delta'].split(' ')                
         except ValueError:
             raise ValueError('delta is in wrong format. examples: "1 s", "2 m", "3 h", "4 D"')
         
