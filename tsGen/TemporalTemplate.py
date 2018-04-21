@@ -214,6 +214,11 @@ class TemporalTemplate:
                                     res: an string for the resolution of points in time. similar to delta time part.                                    
                              """)
     def __add__(self, other):
+        """
+          if the second argument is another TemporalTemplate, then merge them together, while it remove duplicate ticks.
+          if the second argument is a string of delta (e.g. '1 s'), then it adds the delta to all the ticks.
+          if the second argument is a TemporalJitter object, add a random delta (negative values subtracts) to the ticks where the random value is sampled from the TemporalJitter.
+        """
         if(isinstance(other,TemporalTemplate)):
             return merge(self,other)
         elif(isinstance(other,str)):
@@ -228,6 +233,10 @@ class TemporalTemplate:
             raise ValueError('The provided type cannot be added to TemporalTemplate.')
         
     def __sub__(self, other):
+        """
+          if the second argument is a string of delta (e.g. '1 s'), then it subtract the delta from all the ticks.
+          if the second argument is a TemporalJitter object, subtract a random delta (negative values adds) from the ticks where the random value is sampled from the TemporalJitter.
+        """
         if(isinstance(other,TemporalTemplate)):
             raise ValueError('Subtracting two TemporalTemplates is not defined.')
         elif(isinstance(other,str)):
