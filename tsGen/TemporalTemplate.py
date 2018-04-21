@@ -231,7 +231,9 @@ class TemporalTemplate:
           if the second argument is a TemporalJitter object, add a random delta (negative values subtracts) to the ticks where the random value is sampled from the TemporalJitter.
         """
         if(isinstance(other,TemporalTemplate)):
-            return merge(self,other)
+            joined_ticks = np.concatenate((self.ticks,other.ticks))
+            ticks = np.sort(np.unique(joined_ticks))
+            return TemporalTemplate(recipe=None, ticks=ticks)
         elif(isinstance(other,str)):
             delta = self.__parse_delta__(dict(delta=other))            
             ticks = np.array([ t + delta for t in self.ticks ])
