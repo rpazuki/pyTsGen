@@ -6,22 +6,28 @@ Created on Fri Apr 20 11:16:32 2018
 """
 #%%
 import warnings
-import copy
+from collections import Sequence  
 import numpy as np
 from numpy import timedelta64
 import pandas as pd
 
 class TemporalTemplate:
     
-    def __init__(self, recipe, **bykvArgs):
-        if(bykvArgs is None and recipe is None):
-            raise ValueError()
+    def __init__(self, recipe, ticks=None):
+        if(ticks is None and recipe is None):
+            raise ValueError('recipe or ticks is not provided.')
         elif(recipe is not None):
             self.__default_const__(recipe)
-        else:
-            self.start = bykvArgs.get('start')
-            self.end = bykvArgs.get('end')
-            self.ticks = bykvArgs.get('ticks')
+        else:       
+            if(isinstance(ticks,np.ndarray)):
+                self.ticks = ticks
+            elif(isinstance(ticks,Sequence )):
+                self.ticks = np.array(ticks)
+            else:
+                raise ValueError('tick must be a sequence or ndarray.')
+            self.ticks = ticks
+            self.start = self.ticks[0]
+            self.end = self.ticks[-1]
             self.length = len(self.ticks)
         
         
@@ -211,25 +217,29 @@ class TemporalTemplate:
         if(isinstance(other,TemporalTemplate)):
             return merge(self,other)
         elif(isinstance(other,str)):
-            delta = self.__parse_delta__(dict(delta=other))
-            ret = copy.deepcopy(self)
-            for idx,x in enumerate(ret.ticks):
-                ret.ticks[idx] += delta
-            ret.start = ret.ticks[0]
-            ret.end = ret.ticks[-1]
-            return ret
+            delta = self.__parse_delta__(dict(delta=other))            
+            ticks = np.array([ t + delta for t in self.ticks ])
+            return TemporalTemplate(recipe=None, ticks=ticks)           
+        elif(isinstance(other,TemporalJitter)):
+            Jit = iter(other)
+            ticks = np.array([ t + next(Jit) for t in self.ticks ])
+            return TemporalTemplate(recipe=None, ticks=ticks)           
+        else:
+            raise ValueError('The provided type cannot be added to TemporalTemplate.')
         
     def __sub__(self, other):
         if(isinstance(other,TemporalTemplate)):
             raise ValueError('Subtracting two TemporalTemplates is not defined.')
         elif(isinstance(other,str)):
             delta = self.__parse_delta__(dict(delta=other))
-            ret = copy.deepcopy(self)
-            for idx,x in enumerate(ret.ticks):
-                ret.ticks[idx] -= delta
-            ret.start = ret.ticks[0]
-            ret.end = ret.ticks[-1]
-            return ret
+            ticks = np.array([ t - delta for t in self.ticks ])
+            return TemporalTemplate(recipe=None, ticks=ticks) 
+        elif(isinstance(other,TemporalJitter)):
+            Jit = iter(other)
+            ticks = np.array([ t - next(Jit) for t in self.ticks ])
+            return TemporalTemplate(recipe=None, ticks=ticks) 
+        else:
+            raise ValueError('The provided type cannot be subtracted from TemporalTemplate.')
     
     def __parse_delta__(self,d):
         try:
@@ -246,3 +256,4 @@ class TemporalTemplate:
         except TypeError:    
             raise ValueError('delta is in wrong format. The first part must be an integer. examples: "1 s", "2 m", "3 h", "4 D"')
         return ret
+   
