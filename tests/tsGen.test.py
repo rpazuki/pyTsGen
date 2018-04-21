@@ -418,6 +418,51 @@ class Test1(unittest.TestCase):
         self.assertEqual(ts1.start,pd.to_datetime(recipe_1['start']) ,'The start of the multiply  must be equal to the start of the first recipe.')
         self.assertEqual(ts1.end,pd.to_datetime(recipe_1['end']) ,'The end of the multiply must be equal to the end of the second recipe.')
 
+    def test_zoom_mod_by_ratio(self):
+        recipe_1 = { 
+            'start': '2018-01-01',
+            'end': '2018-01-02',
+            'delta': '1 h'
+         }
+                
+        ts1 = TemporalTemplate(recipe_1)
+        
+        
+        ts_all = ts1.zoom(1.0)
+        
+        self.assertEqual(ts_all.length,ts1.length,'The zoom by 1.0 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the the zoom by 1.0 must always be equal to start of the first recipe.')
+        
+        ts_all = ts1.zoom(1)
+        
+        self.assertEqual(ts_all.length,ts1.length,'The zoom by 1 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the the zoom by 1 must always be equal to start of the first recipe.')
+
+        ts_all = ts1.zoom(2.0)
+        
+        self.assertEqual(ts_all.length,ts1.length,'The zoom by 2.0 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime('2018-01-03'),'The end of the the zoom by 2.0 must be equal to 2018-01-03.')
+
+        ts_all = ts1.zoom(0.5)
+        
+        self.assertEqual(ts_all.length,ts1.length,'The zoom by 0.5 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime('2018-01-01 12:00:00'),'The end of the the zoom by 0.5 must be equal to 2018-01-01 12:00:00.')
+        
+        ts_all = ts1 % 0.5
+        
+        self.assertEqual(ts_all.length,ts1.length,'The zoom by 0.5 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime('2018-01-01 12:00:00'),'The end of the the zoom by 0.5 must be equal to 2018-01-01 12:00:00.')
+        
+        
+        ts1 %= 0.5
+                
+        self.assertEqual(ts1.start,pd.to_datetime(recipe_1['start']) ,'The start of the zoom must always be equal to start of the first recipe.')
+        self.assertEqual(ts1.end,pd.to_datetime('2018-01-01 12:00:00'),'The end of the the zoom by 0.5 must be equal to 2018-01-01 12:00:00.')
         
 if __name__ == '__main__':
     unittest.main()            

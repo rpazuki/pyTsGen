@@ -213,6 +213,17 @@ class TemporalTemplate:
                                     points_delta: an iteratable of int. All its elements must be positive.
                                     res: an string for the resolution of points in time. similar to delta time part.                                    
                              """)
+    def __getitem__(self, key):
+        return self.ticks[key]
+    
+    def __setitem__(self, key,value):
+        self.ticks[key] = value
+        
+    def __iter__(self):
+        return iter(self.ticks)
+    def __len__(self):
+        return self.length
+    
     def __add__(self, other):
         """
           if the second argument is another TemporalTemplate, then merge them together, while it remove duplicate ticks.
@@ -296,6 +307,27 @@ class TemporalTemplate:
             
     def __rmul__(self,other):
         return self.__mul__(other)
+    
+    def __mod__(self, other):
+        return self.zoom(other)
+    
+    def zoom(self,ratio):
+        if(isinstance(ratio,float) or isinstance(ratio,int)):
+            if(ratio <=0):
+                raise ValueError('Negative or zero ratio cannot be used for zooming the TemporalTemplate object.')
+            elif(ratio ==1):
+                return TemporalTemplate(recipe=None, ticks=np.copy(self.ticks)) 
+            else:#ratio != 1
+                ticks = [self.ticks[0]]
+                for idx,t in enumerate(self.ticks[:-1]):
+                    next_t = self.ticks[idx+1]
+                    delta = next_t - t
+                    ticks.append(ticks[-1] + delta*ratio)
+                return TemporalTemplate(recipe=None, ticks=np.array(ticks)) 
+        else:
+           raise ValueError('The provided type cannot be used for zooming the TemporalTemplate object.')
+    def __str__(self):
+        return '\n'.join([ str(i) for i in self.ticks])
     
     def __parse_delta__(self,d):
         try:
