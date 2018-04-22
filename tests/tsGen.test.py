@@ -492,17 +492,93 @@ class Test1(unittest.TestCase):
         self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the random remove must always be equal to end of the recipe.')        
         self.assertEqual(ts_all[1],pd.to_datetime('2018-01-01 03:00:00'),'The second ticks of the random remove must be equal to 2018-01-01 03:00:00.')        
         
+        ts_all = ts1 // 0
+       
+        self.assertEqual(ts_all.length,ts1.length ,'The random remove by 0 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the random remove must always be equal to start of the recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the random remove must always be equal to end of the recipe.')        
+        
         with self.assertRaises(ValueError):
             ts1 // -1
-            
-        with self.assertRaises(ValueError):
-            ts1 // 0
+                    
         
         with self.assertRaises(ValueError):
             ts1 // 1.0
             
         with self.assertRaises(ValueError):
             ts1 // 50
+            
+    def test_drop(self):
+        recipe_1 = { 
+            'start': '2018-01-01',
+            'end': '2018-01-02',
+            'delta': '1 h'
+         }
+                
+        ts1 = TemporalTemplate(recipe_1)
+        
+        ts_all = ts1.drop(8)
+        self.assertEqual(ts_all.length,ts1.length - 8,'The drop by 8 must change the length 17.')
+        self.assertEqual(ts_all.start,pd.to_datetime('2018-01-01 08:00:00') ,'The start of the drop by 8 must be equal to 2018-01-01 08:00:00.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the drop by 8 must be equal to end of the recipe.')        
+        
+        ts_all = ts1.drop(0)
+       
+        self.assertEqual(ts_all.length,ts1.length ,'The drop by 0 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the drop by 0 must be equal to start of the recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the drop by 0 must be equal to end of the recipe.')       
+        
+        ts_all = ts1.drop(24)
+        self.assertEqual(ts_all.length,ts1.length - 24,'The drop by 24 must change the length 1.')
+        self.assertEqual(ts_all.start,pd.to_datetime('2018-01-02 00:00:00') ,'The start of the drop by 24 must be equal to 2018-01-02 00:00:00.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the drop by 24 must be equal to end of the recipe.')        
+        
+        
+        with self.assertRaises(ValueError):
+            ts1.drop(25)
+            
+        with self.assertRaises(ValueError):
+            ts1.drop(-1)
+                    
+        
+        with self.assertRaises(ValueError):
+            ts1.drop(1.0)
+            
+    def test_drop_r(self):
+        recipe_1 = { 
+            'start': '2018-01-01',
+            'end': '2018-01-02',
+            'delta': '1 h'
+         }
+                
+        ts1 = TemporalTemplate(recipe_1)
+        
+        ts_all = ts1.drop_r(8)
+        self.assertEqual(ts_all.length,ts1.length - 8,'The drop_r by 8 must change the length 17.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the drop_r by 8 must be equal to start of the recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime('2018-01-01 16:00:00'),'The start of the drop_r by 8 must be equal to 2018-01-01 16:00:00.')        
+        
+        ts_all = ts1.drop_r(0)
+       
+        self.assertEqual(ts_all.length,ts1.length ,'The drop_r by 0 must not change the length.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the drop_r by 0 must be equal to start of the recipe.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['end']),'The end of the drop_r by 0 must be equal to end of the recipe.')       
+        
+        ts_all = ts1.drop_r(24)
+        self.assertEqual(ts_all.length,ts1.length - 24,'The drop_r by 24 must change the length 1.')
+        self.assertEqual(ts_all.start,pd.to_datetime(recipe_1['start']) ,'The start of the drop_r by 24 must be equal to 2018-01-01 00:00:00.')
+        self.assertEqual(ts_all.end,pd.to_datetime(recipe_1['start']),'The end of the drop_r by 24 must be equal to end of the recipe.')        
+        
+        
+        with self.assertRaises(ValueError):
+            ts1.drop_r(25)
+            
+        with self.assertRaises(ValueError):
+            ts1.drop_r(-1)
+                    
+        
+        with self.assertRaises(ValueError):
+            ts1.drop_r(1.0)
         
 if __name__ == '__main__':
     unittest.main()            

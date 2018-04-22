@@ -349,20 +349,49 @@ class TemporalTemplate:
                 return TemporalTemplate(recipe=None, ticks=np.array(ticks)) 
         else:
            raise ValueError('The provided type cannot be used for zooming the TemporalTemplate object.')
-    def __floordiv__(self, other):
+           
+    def drop(self,n):
+        """
+          drops n elements from start
+        """
+        if(isinstance(n,int)):
+            if(n < 0):
+                raise ValueError('Negative values cannot be used for droping ticks.')
+            elif(n >= self.length):
+                raise ValueError('%d is larger than or equal to the length: %d. for droping ticks' % (n,self.length))           
+            else:
+                ticks = np.array( [self.ticks[i] for i in range(n,self.length)])
+                return TemporalTemplate(recipe=None, ticks=ticks)
+        else:
+           raise ValueError('The provided type cannot be used for droping ticks.')
+           
+    def drop_r(self,n):
+        """
+          drops n elements from end
+        """
+        if(isinstance(n,int)):
+            if(n < 0):
+                raise ValueError('Negative values cannot be used for left droping ticks.')
+            elif(n >= self.length):
+                raise ValueError('%d is larger than or equal to the length: %d. for left droping ticks' % (n,self.length))           
+            else:
+                ticks = np.array( [self.ticks[i] for i in range(0,self.length-n)])
+                return TemporalTemplate(recipe=None, ticks=ticks)
+        else:
+           raise ValueError('The provided type cannot be used for left droping ticks.')
+    def __floordiv__(self, n):
         """
          if the second argument is an int, random number of elements are removed from within ticks (not start and end).
          Negative and zero values raise ValueError exception
          Values larger thane length-2 raise ValueError exception
         """
-        n = other
         if(isinstance(n,int)):
-            if(n <= 0):
-                raise ValueError('Zero or negative values cannot be used for removing random ticks.')
+            if(n < 0):
+                raise ValueError('Negative values cannot be used for removing random ticks.')
             elif(n > self.length -2):
                 raise ValueError('%d is larger than the length - 2: (%d -2).' % (n,self.length))
             elif(n == 0):
-                return TemporalTemplate(recipe=None, ticks=np.array(ticks))
+                return TemporalTemplate(recipe=None, ticks=np.array(self.ticks))
             else:
                 indecies =  np.random.choice(range(1,self.length-1),size=n,replace=False)
                 ticks = np.copy(self.ticks)
