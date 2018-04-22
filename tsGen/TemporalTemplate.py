@@ -310,9 +310,24 @@ class TemporalTemplate:
     def __rmul__(self,other):
         return self.__mul__(other)
     
-    def __mod__(self, other):
-        return self.zoom(other)
     
+    def __rshift__(self, other):
+        if(isinstance(other,float) or isinstance(other,int)):
+            if(other <1):
+                raise ValueError('ratio must be greater than 1.0 to expand TemporalTemplate object.')
+            else:
+                return self.zoom(other)
+        else:
+            raise ValueError('The provided type cannot be used for expanding the TemporalTemplate object.')
+            
+    def __lshift__(self, other):
+        if(isinstance(other,float) or isinstance(other,int)):
+            if(other >1 or other <= 0):
+                raise ValueError('ratio must be in (0,1.0] to shrink TemporalTemplate object.')
+            else:
+                return self.zoom(other)
+        else:
+            raise ValueError('The provided type cannot be used for shrinking the TemporalTemplate object.')
     def zoom(self,ratio):
         if(isinstance(ratio,float) or isinstance(ratio,int)):
             if(ratio <=0):
