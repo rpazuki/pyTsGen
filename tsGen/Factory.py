@@ -14,10 +14,18 @@ class Factory:
         self.sampler = sampler
         
     def create(self):
-        data = np.zeros((self.temporal.length,),dtype=float)
-        
-        for idx,tick in enumerate(self.temporal):
-            data[idx] = self.sampler(idx,tick)
+        if(isinstance(self.sampler,Sampler)):
+            data = np.zeros((self.temporal.length,),dtype=float)
             
-        return pd.Series(data,index=self.temporal.ticks)
+            for idx,tick in enumerate(self.temporal):
+                data[idx] = self.sampler(idx,tick)
+                
+            return pd.Series(data,index=self.temporal.ticks)
+        elif(isinstance(self.sampler,CategoriesSampler)):
+            data = np.zeros((self.temporal.length,),dtype=object)
+            
+            for idx,tick in enumerate(self.temporal):
+                data[idx] = self.sampler(idx,tick)
+                
+            return pd.Series(data,index=self.temporal.ticks)
             

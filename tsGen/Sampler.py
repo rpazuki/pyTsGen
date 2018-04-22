@@ -25,12 +25,7 @@ class Sampler:
             r = 0.0
             for s in self.samplers:
                 r += s(idx,tick)
-            return r
-    def __next__(self,idx,tick):
-        return self.__call__(idx,tick)
-    
-    def next(self,idx,tick):
-        return self.__next__(idx,tick)
+            return r    
     
     def __add__(self,other):
         if(isinstance(other,Sampler)):
