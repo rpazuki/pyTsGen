@@ -312,6 +312,9 @@ class TemporalTemplate:
     
     
     def __rshift__(self, other):
+        """
+          if the second argument is an int or float (greater or equal to 1.0), all the point are expanded by the provided ratio. The starting point is fixed.
+        """
         if(isinstance(other,float) or isinstance(other,int)):
             if(other <1):
                 raise ValueError('ratio must be greater than 1.0 to expand TemporalTemplate object.')
@@ -321,6 +324,9 @@ class TemporalTemplate:
             raise ValueError('The provided type cannot be used for expanding the TemporalTemplate object.')
             
     def __lshift__(self, other):
+        """
+          if the second argument is an int or float (in (0.0, 1.0])), all the point are shrinked by the provided ratio. The starting point is fixed.
+        """
         if(isinstance(other,float) or isinstance(other,int)):
             if(other >1 or other <= 0):
                 raise ValueError('ratio must be in (0,1.0] to shrink TemporalTemplate object.')
@@ -343,6 +349,27 @@ class TemporalTemplate:
                 return TemporalTemplate(recipe=None, ticks=np.array(ticks)) 
         else:
            raise ValueError('The provided type cannot be used for zooming the TemporalTemplate object.')
+    def __floordiv__(self, other):
+        """
+         if the second argument is an int, random number of elements are removed from within ticks (not start and end).
+         Negative and zero values raise ValueError exception
+         Values larger thane length-2 raise ValueError exception
+        """
+        n = other
+        if(isinstance(n,int)):
+            if(n <= 0):
+                raise ValueError('Zero or negative values cannot be used for removing random ticks.')
+            elif(n > self.length -2):
+                raise ValueError('%d is larger than the length - 2: (%d -2).' % (n,self.length))
+            elif(n == 0):
+                return TemporalTemplate(recipe=None, ticks=np.array(ticks))
+            else:
+                indecies =  np.random.choice(range(1,self.length-1),size=n,replace=False)
+                ticks = np.copy(self.ticks)
+                return TemporalTemplate(recipe=None, ticks=np.delete(ticks,indecies))
+        else:
+           raise ValueError('The provided type cannot be used for removing random ticks.')
+        
     def __str__(self):
         return '\n'.join([ str(i) for i in self.ticks])
     
