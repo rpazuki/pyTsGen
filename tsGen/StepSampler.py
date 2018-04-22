@@ -14,5 +14,5 @@ class StepSampler(Sampler):
         self.steps = steps
         self.probs = probs
         
-    def __call__(self,idx,tick):
+    def __call__(self,idx,x,tick):
         return np.random.choice(self.steps,size=1,p=self.probs).item()

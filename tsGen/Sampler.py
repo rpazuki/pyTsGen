@@ -18,13 +18,13 @@ class Sampler:
                 self.samplers.append(s)
             #print(self.samplers)
     
-    def __call__(self,idx,tick):
+    def __call__(self,idx,x,tick):
         if(self.samplers is None):
             pass
         else:
             r = 0.0
             for s in self.samplers:
-                r += s(idx,tick)
+                r += s(idx,x,tick)
             return r    
     
     def __add__(self,other):

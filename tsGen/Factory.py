@@ -21,9 +21,13 @@ class Factory:
     def create(self):        
         if(isinstance(self.sampler,Sampler)):
             data = np.zeros((self.temporal.length,),dtype=float)
-            
-            for idx,tick in enumerate(self.temporal):
-                data[idx] = self.sampler(idx,tick)
+            total_delta = self.temporal[-1] - self.temporal[0]
+            current_delta = np.timedelta64(0,'h')
+            for idx,tick in enumerate(self.temporal[:-1]):                
+                data[idx] = self.sampler(idx,current_delta/total_delta,tick)
+                current_delta += self.temporal[idx+1] - tick
+                
+            data[-1] = self.sampler(self.temporal.length-1,1.0,self.temporal[-1])                    
                 
             return pd.Series(data,index=self.temporal.ticks)
         elif(isinstance(self.sampler,CategoriesSampler)):

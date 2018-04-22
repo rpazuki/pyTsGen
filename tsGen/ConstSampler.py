@@ -11,5 +11,5 @@ class ConstSampler(Sampler):
         Sampler.__init__(self)
         self.value = value
         
-    def __call__(self,idx,tick):
+    def __call__(self,idx,x,tick):
         return self.value

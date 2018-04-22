@@ -13,5 +13,5 @@ class PDFSampler(Sampler):
         Sampler.__init__(self)
         self.pdf = pdf
         
-    def __call__(self,idx,tick):
+    def __call__(self,idx,x,tick):
         return self.pdf.rvs(1).item()

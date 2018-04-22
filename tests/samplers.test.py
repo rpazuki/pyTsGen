@@ -12,6 +12,7 @@ import unittest
 import numpy as np
 from scipy.stats import poisson
 from scipy.stats import norm
+import math
 
 class Test1(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -92,6 +93,29 @@ class Test1(unittest.TestCase):
         f3 = Factory(self.ts,pois + gaussian)
         series = f3.create()
         
+    def s(self,idx,x,tick): 
+        return math.sin(2.0*math.pi*x)
+    def test_FunctionSampler(self):
+       
+        sin1 = FunctionSampler(self.s)
+        f1 = Factory(self.ts,sin1)
+        series = f1.create()
+       
+        self.assertEqual(series[0],0.0,'The first value for sin must be zero')
+        self.assertEqual(series[6],1.0,'The 7th value for sin must be 1')
+        
+        sin2 = FunctionSampler(func= lambda idx,x,tick: math.sin(2.0*math.pi*x))        
+        f2 = Factory(self.ts,sin2)
+        series = f2.create()
+        self.assertEqual(series[0],0.0,'The first value for sin must be zero')
+        self.assertEqual(series[6],1.0,'The 7th value for sin must be 1')
+        
+        line = FunctionSampler(func= lambda idx,x,tick: 2*x + 3.0)       
+        f3 = Factory(self.ts,line)
+        series = f3.create()
+        self.assertEqual(series[0],3.0,'The first value for the line must be 3')
+        self.assertEqual(series[12],4.0,'The 14th value for the line must be 4')
+        self.assertEqual(series[-1],5.0,'The last value for the line must be 5')
         
 if __name__ == '__main__':
     unittest.main()         
