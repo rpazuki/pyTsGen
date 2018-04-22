@@ -20,12 +20,11 @@ class TemporalTemplate:
             self.__default_const__(recipe)
         else:       
             if(isinstance(ticks,np.ndarray)):
-                self.ticks = ticks
+                self.ticks = np.sort(np.unique(ticks))
             elif(isinstance(ticks,Sequence )):
-                self.ticks = np.array(ticks)
+                self.ticks = np.sort(np.unique(np.array(ticks)))
             else:
                 raise ValueError('tick must be a sequence or ndarray.')
-            self.ticks = ticks
             self.start = self.ticks[0]
             self.end = self.ticks[-1]
             self.length = len(self.ticks)
@@ -203,7 +202,7 @@ class TemporalTemplate:
                                 Format three: end, length, delta
                                 Format four: start, end, length
                                 Format five: start, points, res
-                                Format six: end, points_delta, res
+                                Format six: start, points_delta, res
                                 Note: 
                                     start: formatted date-time as string
                                     end: formatted date-time as string 
@@ -232,8 +231,7 @@ class TemporalTemplate:
         """
         if(isinstance(other,TemporalTemplate)):
             joined_ticks = np.concatenate((self.ticks,other.ticks))
-            ticks = np.sort(np.unique(joined_ticks))
-            return TemporalTemplate(recipe=None, ticks=ticks)
+            return TemporalTemplate(recipe=None, ticks=joined_ticks)
         elif(isinstance(other,str)):
             delta = self.__parse_delta__(dict(delta=other))            
             ticks = np.array([ t + delta for t in self.ticks ])
