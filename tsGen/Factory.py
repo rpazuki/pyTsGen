@@ -8,6 +8,10 @@ Created on Sun Apr 22 17:41:54 2018
 import numpy as np
 import pandas as pd
 
+from tsGen.temporal import TemporalTemplate
+from tsGen.catsamplers import CategoriesSampler
+from tsGen.samplers import Sampler
+
 class Factory:
     def __init__(self,temporal,sampler):
         if(not isinstance(temporal,TemporalTemplate)):
@@ -24,10 +28,10 @@ class Factory:
             total_delta = self.temporal[-1] - self.temporal[0]
             current_delta = np.timedelta64(0,'h')
             for idx,tick in enumerate(self.temporal[:-1]):                
-                data[idx] = self.sampler(idx,current_delta/total_delta,tick)
+                data[idx] = self.sampler(idx,current_delta/total_delta,tick,self.temporal.length)
                 current_delta += self.temporal[idx+1] - tick
                 
-            data[-1] = self.sampler(self.temporal.length-1,1.0,self.temporal[-1])                    
+            data[-1] = self.sampler(self.temporal.length-1,1.0,self.temporal[-1],self.temporal.length)                    
                 
             return pd.Series(data,index=self.temporal.ticks)
         elif(isinstance(self.sampler,CategoriesSampler)):
