@@ -64,7 +64,7 @@ class Sampler:
         return ret
             
             
-class ConstSampler(Sampler):
+class Const(Sampler):
     
     def __init__(self,value):
         Sampler.__init__(self)
@@ -73,7 +73,7 @@ class ConstSampler(Sampler):
     def __call__(self,params):
         return self.value
 
-class StepSampler(Sampler):
+class Step(Sampler):
     
     def __init__(self,steps,probs=None):
         Sampler.__init__(self)
@@ -84,7 +84,7 @@ class StepSampler(Sampler):
         return np.random.choice(self.steps,size=1,p=self.probs).item()
 
 
-class FunctionSampler(Sampler):
+class Function(Sampler):
     
     def __init__(self,func):
         Sampler.__init__(self)
@@ -96,7 +96,22 @@ class FunctionSampler(Sampler):
     def __call__(self,params):        
         return self.func(params)
 
-class PDFSampler(Sampler):
+class Periodic(Sampler):
+    
+    def __init__(self,period='1 h',func=lambda x: np.sin(2*np.pi*x)):
+        Sampler.__init__(self)
+        if(not callable(func)):
+            raise ValueError('func argument is not callable')
+            
+        self.func = func
+        self.period = Sampler.__parse_delta__(self,dict(delta=period))
+        
+    def __call__(self,params):
+        time_elapsed = params['tick'] - params['start']
+        incompelete_segment = time_elapsed/self.period - int(time_elapsed/self.period)
+        return self.func(incompelete_segment)
+
+class PDF(Sampler):
     
     def __init__(self,pdf):
         Sampler.__init__(self)
@@ -106,7 +121,7 @@ class PDFSampler(Sampler):
         return self.pdf.rvs(1).item()            
     
     
-class AutoRegSampler(Sampler):
+class AutoReg(Sampler):
     def __init__(self,coeffs,init,noise=1.0,const=0.0):        
         """
         Generate an autorehression time series plus added normal noise.
@@ -135,7 +150,7 @@ class AutoRegSampler(Sampler):
         return x_n_plus_1
     
     
-class MovingAvgSampler(Sampler):
+class MovingAvg(Sampler):
     def __init__(self,coeffs,noise=1.0,mean=0.0):        
         """
         Generate a moving average time series plus added normal noise.

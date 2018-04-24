@@ -143,7 +143,7 @@ class TemporalTemplate:
         #Format five: start, points, res
         elif('start' in recipe and not 'end' in recipe and not 'delta' in recipe and not 'length' in recipe\
            and 'points' in recipe and 'res' in recipe and not 'points_delta' in recipe):
-            
+                        
             self.start = pd.to_datetime(recipe['start'])
             
             if('start-exclusive' in recipe and recipe['start-exclusive'] == True):
@@ -153,8 +153,15 @@ class TemporalTemplate:
 
             resolution = recipe['res']
             current_date = self.start
+            if(callable(recipe['points'])):
+                points = recipe['points']()
+            elif(isinstance(recipe['points'],Sequence)):
+                points = recipe['points']
+            else:
+                raise ValueError('The points must be a function or a sequence.')
+                
             previous_p = 0
-            for p in recipe['points']:                         
+            for p in points:                         
                 delta_p = p - previous_p
                 if(delta_p <= 0):
                     raise ValueError('points sequence must be an strictly increasing function ')
@@ -182,7 +189,15 @@ class TemporalTemplate:
 
             resolution = recipe['res']
             current_date = self.start
-            for p in recipe['points_delta']:      
+            
+            if(callable(recipe['points_delta'])):
+                points_delta = recipe['points_delta']()
+            elif(isinstance(recipe['points_delta'],Sequence)):
+                points_delta = recipe['points_delta']
+            else:
+                raise ValueError('The points_delta must be a function or a sequence.')
+                
+            for p in points_delta:      
                 if(p <= 0):
                     raise ValueError('points_delta sequence must be positve/non-zero.')                   
                 current_date += np.timedelta64(p,resolution)
