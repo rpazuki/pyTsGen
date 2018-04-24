@@ -21,13 +21,13 @@ class Sampler:
                 self.samplers.append(s)
             #print(self.samplers)
     
-    def __call__(self,idx,x,tick,length):
+    def __call__(self,params):
         if(self.samplers is None):
             pass
         else:
             r = 0.0
             for s in self.samplers:
-                r += s(idx,x,tick,length)
+                r += s(params)
             return r    
     
     def __add__(self,other):
@@ -47,6 +47,22 @@ class Sampler:
         else:
             raise ValueError('The provided type cannot be added to Sampler.')
             
+    def __parse_delta__(self,d):
+        try:
+            (i,st) = d['delta'].split(' ')                
+        except ValueError:
+            raise ValueError('delta is in wrong format. examples: "1 s", "2 m", "3 h", "4 D"')
+        
+        try:
+            i = int(i)            
+        except ValueError:
+            raise ValueError('delta is in wrong format. The first part must be an integer. examples: "1 s", "2 m", "3 h", "4 D"')
+        try:
+            ret = np.timedelta64(i,st)
+        except TypeError:    
+            raise ValueError('delta is in wrong format. The first part must be an integer. examples: "1 s", "2 m", "3 h", "4 D"')
+        return ret
+            
             
 class ConstSampler(Sampler):
     
@@ -54,7 +70,7 @@ class ConstSampler(Sampler):
         Sampler.__init__(self)
         self.value = value
         
-    def __call__(self,idx,x,tick,length):
+    def __call__(self,params):
         return self.value
 
 class StepSampler(Sampler):
@@ -64,7 +80,7 @@ class StepSampler(Sampler):
         self.steps = steps
         self.probs = probs
         
-    def __call__(self,idx,x,tick,length):
+    def __call__(self,params):
         return np.random.choice(self.steps,size=1,p=self.probs).item()
 
 
@@ -77,8 +93,8 @@ class FunctionSampler(Sampler):
             
         self.func = func
         
-    def __call__(self,idx,x,tick,length):        
-        return self.func(idx,x,tick)
+    def __call__(self,params):        
+        return self.func(params)
 
 class PDFSampler(Sampler):
     
@@ -86,7 +102,7 @@ class PDFSampler(Sampler):
         Sampler.__init__(self)
         self.pdf = pdf
         
-    def __call__(self,idx,x,tick,length):
+    def __call__(self,params):
         return self.pdf.rvs(1).item()            
     
     
@@ -103,15 +119,19 @@ class AutoRegSampler(Sampler):
             
         self.coeffs = np.array(coeffs,dtype=float)
         self.init = np.array(init,dtype=float)
+        self.degree = len(coeffs)
         self.noise = noise
         self.norm = norm(0.0,noise)
         self.const = const
         
-    def __call__(self,idx,x,tick,length):
-        x_n_plus_1 = self.const + np.dot(self.coeffs,self.init) + self.norm.rvs(1).item() 
-        
-        self.init = np.roll(self.init,-1)# shift all the element to left, so the first element moves to last
-        self.init[-1] = x_n_plus_1# replace the last element (which is the first one from previous shift) with the new one
+    def __call__(self,params):
+        history = params['history']
+        if(len(history) <= self.degree):
+           history_vec = np.concatenate((self.init,history))              
+        else:
+           history_vec = history        
+        x_n_plus_1 = self.const + np.dot(self.coeffs,history_vec[-self.degree:]) + \
+                                  self.norm.rvs(1).item() 
         return x_n_plus_1
     
     
@@ -129,7 +149,7 @@ class MovingAvgSampler(Sampler):
         self.init = np.array( [self.norm.rvs(1).item() for i in self.coeffs] ,dtype=float)
         
         
-    def __call__(self,idx,x,tick,length):
+    def __call__(self,params):                  
         epsion_n_plus_1 = self.norm.rvs(1).item()
         x_n_plus_1 = self.mean + np.dot(self.coeffs,self.init) +  epsion_n_plus_1
         
@@ -137,29 +157,3 @@ class MovingAvgSampler(Sampler):
         self.init[-1] = epsion_n_plus_1# replace the last element (which is the first one from previous shift) with the new one
         return x_n_plus_1    
     
-class InvFFTSampler(Sampler):
-    def __init__(self,spectrum ):        
-        """
-        Generate a signal from spectrum.
-        spectrum: 
-        """
-        Sampler.__init__(self)        
-           
-        self.spectrum  = np.array(spectrum ,dtype=float)
-        self.signal = None
-        #self.reals = np.vectorize(lambda x: x.real() )
-        
-    def __call__(self,idx,x,tick,length):
-        if(self.signal is None):
-            if(len(self.spectrum) >= length):
-                d_complex = ihfft(self.spectrum[:length])
-            else:
-                padding_len = length - len(self.spectrum)
-                padded_spectrum = np.concatenate((self.spectrum,np.zeros(padding_len,dtype=float)))
-                print(padded_spectrum)
-                d_complex = ihfft(padded_spectrum)
-                print(d_complex)
-            #f = np.vectorize(lambda x: x.real() )
-            self.signal = d_complex#f(d_complex)
-                    
-        return self.signal[idx]     

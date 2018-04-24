@@ -27,11 +27,20 @@ class Factory:
             data = np.zeros((self.temporal.length,),dtype=float)
             total_delta = self.temporal[-1] - self.temporal[0]
             current_delta = np.timedelta64(0,'h')
-            for idx,tick in enumerate(self.temporal[:-1]):                
-                data[idx] = self.sampler(idx,current_delta/total_delta,tick,self.temporal.length)
+            params = dict(idx=0,x=0.0,tick=self.temporal[-1],history=[],length=self.temporal.length)
+            for idx,tick in enumerate(self.temporal[:-1]):  
+                params['idx'] = idx
+                params['x'] = current_delta/total_delta
+                params['tick'] = tick
+                params['history'] = [] if(idx == 0)  else data[:idx]
+                data[idx] = self.sampler(params)
                 current_delta += self.temporal[idx+1] - tick
                 
-            data[-1] = self.sampler(self.temporal.length-1,1.0,self.temporal[-1],self.temporal.length)                    
+            params['idx'] = idx
+            params['x'] = current_delta/total_delta
+            params['tick'] = tick
+            params['history'] = data[:-1]
+            data[-1] = self.sampler(params)                    
                 
             return pd.Series(data,index=self.temporal.ticks)
         elif(isinstance(self.sampler,CategoriesSampler)):
